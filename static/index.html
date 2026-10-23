@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SQL Video Search</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; padding: 0 16px; background: #f5f6fa; color: #222; }
+    h1 { margin-bottom: 4px; }
+    .sub { color: #666; margin-top: 0; }
+    .search { display: flex; gap: 8px; margin: 20px 0; }
+    input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #bbb; border-radius: 8px; }
+    button { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .card { background: white; padding: 16px; border-radius: 10px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    #answer { white-space: pre-wrap; line-height: 1.6; }
+    .source { border-top: 1px solid #eee; padding: 10px 0; }
+    .source small { color: #666; }
+    .play { padding: 6px 12px; font-size: 14px; margin-top: 6px; }
+    iframe { width: 100%; height: 420px; border: none; border-radius: 10px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Gate Smashers- SQL revision 🎬</h1>
+  <p class="sub">Ask a question, get an answer and the exact moment in the lecture.</p>
+
+  <div class="search">
+    <input id="question" placeholder="e.g. DDL aur DML mein kya fark hai?" />
+    <button id="askBtn">Ask</button>
+  </div>
+
+  <div id="status" class="hidden card"></div>
+
+  <div id="playerBox" class="card hidden">
+    <h3 id="playerTitle"></h3>
+    <iframe id="player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </div>
+
+  <div id="answerBox" class="card hidden">
+    <h3>Answer</h3>
+    <div id="answer"></div>
+  </div>
+
+  <div id="sourcesBox" class="card hidden">
+    <h3>Sources (click to play)</h3>
+    <div id="sources"></div>
+  </div>
+
+  <script>
+    const input = document.getElementById("question");
+    const askBtn = document.getElementById("askBtn");
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = String(seconds % 60).padStart(2, "0");
+      return m + ":" + s;
+    }
+
+    function playVideo(source) {
+      const url = "https://www.youtube.com/embed/" + source.video_id +
+                  "?start=" + source.start + "&autoplay=1";
+      document.getElementById("player").src = url;
+      document.getElementById("playerTitle").textContent =
+        source.title + " (from " + formatTime(source.start) + ")";
+      document.getElementById("playerBox").classList.remove("hidden");
+      document.getElementById("playerBox").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function ask() {
+      const question = input.value.trim();
+      if (!question) return;
+
+      const status = document.getElementById("status");
+      status.textContent = "Searching lectures and thinking ...";
+      status.classList.remove("hidden");
+      askBtn.disabled = true;
+
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: question }),
+        });
+        if (!res.ok) throw new Error("Server error " + res.status);
+        const data = await res.json();
+
+        document.getElementById("answer").textContent = data.answer;
+        document.getElementById("answerBox").classList.remove("hidden");
+
+        const list = document.getElementById("sources");
+        list.innerHTML = "";
+        data.sources.forEach((s) => {
+          const div = document.createElement("div");
+          div.className = "source";
+
+          const title = document.createElement("strong");
+          title.textContent = "[" + s.number + "] " + s.title;
+
+          const info = document.createElement("small");
+          info.textContent = " @ " + formatTime(s.start);
+
+          const text = document.createElement("div");
+          text.textContent = s.text + " ...";
+
+          const btn = document.createElement("button");
+          btn.className = "play";
+          btn.textContent = "▶ Play from " + formatTime(s.start);
+          btn.onclick = () => playVideo(s);
+
+          div.append(title, info, text, btn);
+          list.appendChild(div);
+        });
+        document.getElementById("sourcesBox").classList.remove("hidden");
+
+        // auto-play the best match
+        playVideo(data.sources[0]);
+        status.classList.add("hidden");
+      } catch (err) {
+        status.textContent = "Oops, something went wrong: " + err.message;
+      } finally {
+        askBtn.disabled = false;
+      }
+    }
+
+    askBtn.addEventListener("click", ask);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+  </script>
+</body>
+</html>
