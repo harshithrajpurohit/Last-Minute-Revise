@@ -1,0 +1,16 @@
+# virtual environment
+venv/
+
+# generated data (can be recreated by running the scripts)
+audio/
+transcripts/
+qdrant_data/
+chunks.json
+videos.json
+
+# Python junk
+__pycache__/
+*.pyc
+
+# secrets
+.env
