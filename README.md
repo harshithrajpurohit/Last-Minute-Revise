@@ -67,3 +67,8 @@ Get a free API key at https://console.groq.com.
 - Lecture content belongs to its original creator. This repo contains only code,
   not the audio or transcripts.
 - Transcripts are auto-generated, so some spellings are imperfect.
+
+## Demo
+![Demo](demo1.png)
+![Demo](demo2.png)
+![Demo](demo3.png)
