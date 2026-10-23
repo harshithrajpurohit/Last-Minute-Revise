@@ -1,0 +1,8 @@
+yt-dlp
+faster-whisper
+sentence-transformers
+qdrant-client
+fastapi
+uvicorn
+groq
+numpy
